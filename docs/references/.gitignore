@@ -1,0 +1,8 @@
+# File tải về lớn / có bản quyền: không đưa vào git. Tái tạo bằng link trong README.md
+papers/*.pdf
+papers/translated/
+dataset/*.zip
+dataset/meme_coin_anon-main/
+
+# Markdown chuyển từ PDF (tái tạo bằng scripts/pdf_to_md.py)
+markdown/

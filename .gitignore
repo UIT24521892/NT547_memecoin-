@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.env
+.DS_Store
+.pytest_cache/
+
+# Dữ liệu thu được: lớn, tái tạo bằng script (CLAUDE.md Mục 8)
+data/raw/
+data/interim/
+data/processed/
