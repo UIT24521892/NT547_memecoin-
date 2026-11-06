@@ -4,6 +4,9 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 
+# Bộ nhớ dự án chỉ giữ trên máy, không đưa lên GitHub (sinh viên yêu cầu, 2026-11-06)
+MEMORY.md
+
 # Dữ liệu thu được: lớn, tái tạo bằng script (CLAUDE.md Mục 8)
 data/raw/
 data/interim/
