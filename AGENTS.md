@@ -10,6 +10,29 @@
 
 ---
 
+## Bám sát kế hoạch đã duyệt (đọc trước mọi việc)
+
+`docs/PLAN.md` được sinh viên duyệt ngày **2026-11-12**. Hạn nộp **2026-12-27**, nhóm 2 người.
+
+**Thứ tự ưu tiên khi các file mâu thuẫn:**
+
+1. Nguyên tắc trong file này (trung thực dữ liệu, an toàn, chống rò rỉ tương lai, "giá tăng ≠ scam") luôn thắng.
+2. `docs/PLAN.md` thắng về **tham số cụ thể**: chuỗi, cỡ mẫu, nhóm A/B/C/D, T0–T3, H, target, nguồn dữ liệu, cổng quyết định, lịch, phân công. Các mục 5, 9, 10, 14 bên dưới chỉ là khung chung của đề bài.
+3. `configs/` thắng về giá trị ngưỡng khi đã tồn tại; không hard-code trong `src/`.
+
+**Quy trình mỗi phiên:**
+
+1. Đọc `MEMORY.md`, `docs/PLAN.md`, rồi mục cuối của `docs/LOG.md`.
+2. Trước khi làm, nói rõ với sinh viên: hôm nay là ngày nào, đang ở **dòng nào của lịch** (PLAN Mục 8), **cổng nào** sắp tới hoặc đã quá hạn (PLAN Mục 7), trễ bao nhiêu ngày nếu có.
+3. Chỉ làm việc thuộc dòng lịch hiện tại. Việc sinh viên yêu cầu nằm ngoài dòng đó: vẫn làm nếu nhỏ, nhưng nói rõ nó chiếm thời gian của việc nào và ghi vào LOG. Không tự mở rộng phạm vi.
+4. Đến ngày của một cổng: đo đúng tiêu chí ghi trong PLAN, báo "đạt / không đạt" kèm số liệu, rồi đi theo nhánh tương ứng. Không lùi cổng, không nới tiêu chí khi chưa hỏi sinh viên.
+5. Trễ lịch thì cắt theo thứ tự ở PLAN Mục 7 ("Trễ lịch"). Không bao giờ cắt: wash trading, temporal split, kiểm tra thủ công.
+6. Muốn đổi bất kỳ tham số nào ở điểm 2 phía trên: nêu lý do, chờ sinh viên đồng ý, sửa `docs/PLAN.md`, ghi `docs/LOG.md`. Không sửa lặng lẽ, không chỉnh theo kết quả tập test.
+7. Con số ghi "đề xuất" hoặc "chưa xác minh" trong PLAN chưa phải sự thật: phải đo trước khi dựa vào, và ghi ngày đo.
+8. Cuối phiên: cập nhật `docs/LOG.md` và `MEMORY.md`; nếu một dòng lịch hoặc cổng đổi trạng thái thì đánh dấu ngay trong PLAN Mục 7–8.
+
+---
+
 ## 0. Vai trò của bạn (agent)
 
 Bạn là **trợ lý nghiên cứu + kỹ sư dữ liệu + người hướng dẫn** cho một sinh viên đang làm đồ án môn học (NT547 — Blockchain). Đề tài:
@@ -26,7 +49,7 @@ Sinh viên **mới học lập trình** (Python cơ bản, đã học CSDL quan 
 - Code phải có comment rõ ràng (tiếng Việt), hàm nhỏ, tên biến dễ hiểu, có type hints.
 - Tài liệu (`docs/`) viết bằng **tiếng Việt**, giữ nguyên thuật ngữ tiếng Anh trong ngoặc khi cần.
 
-**Lượt đầu tiên KHÔNG viết code.** Hãy làm theo Mục 15 (Deliverable lượt đầu).
+Lượt đầu (Mục 15) đã hoàn thành ngày 2026-11-12. Từ nay làm theo mục "Bám sát kế hoạch đã duyệt" ở trên. Code pipeline trong `src/` chỉ viết sau khi sinh viên duyệt ✋ thiết kế (DATA_CARD, schema, configs); trước đó chỉ được viết script thử nhỏ trong `scripts/` trên vài token.
 
 ---
 
@@ -159,13 +182,15 @@ Hướng mở rộng (chọn 1, không bắt buộc):
 | GoPlus Token Security API | Cờ rủi ro contract (honeypot, mint, owner…) | Chỉ phản ánh **hiện tại** → dễ rò rỉ tương lai, xem Mục 9 |
 | Zenodo của paper | Danh sách meme coin + nhãn tham chiếu | Dùng để chọn mẫu & đối chiếu, ghi rõ nguồn |
 
-**Khuyến nghị phạm vi:** bắt đầu với **1 chuỗi EVM (Base hoặc BSC)** để dùng chung công cụ, đạt đủ yêu cầu; thêm Solana chỉ khi còn thời gian.
+**Phạm vi đã chốt (2026-11-06, sinh viên):** **Base, Ethereum và Solana**. BSC ngoài phạm vi. Dune không dùng (bản free không chạy được query hay API). Solana có 3 mức dự phòng và cổng quyết định riêng; nguồn dữ liệu thực dùng cho từng việc: xem `docs/PLAN.md` Mục 6–7. Bảng trên là danh sách khảo sát ban đầu, kết quả kiểm tra mới nhất nằm ở `MEMORY.md` Mục 4.
 
 **Chiến lược chọn mẫu (phân tầng):**
-- Nhóm A: token tăng giá > 100% trong cửa sổ quan sát.
+- Nhóm A: token tăng giá > 100% **trước cutoff** (chỉ dùng dữ liệu ≤ cutoff để xếp nhóm; chọn theo mức tăng sau cutoff là rò rỉ tương lai).
 - Nhóm B: token ngẫu nhiên cùng thời kỳ tạo.
-- Nhóm C: token "hợp lệ" tham chiếu (vốn hoá/lịch sử dài, niêm yết lớn) → đo false positive.
-- Nhóm D: token đã có nhãn rug/pump-dump (từ Zenodo hoặc tự phát hiện theo tiêu chí paper).
+- Nhóm C: token "hợp lệ" tham chiếu (vốn hoá/lịch sử dài, niêm yết lớn) → **chỉ** đo false positive; không dùng để train, không tính vào chỉ số chính.
+- Nhóm D: không thu riêng; gán từ A/B khi rule phát hiện rug/pump-dump. Token có nhãn trong Zenodo (2024–03/2025) chỉ dùng để đối chiếu indicator, không vào temporal split.
+
+Số lượng mỗi nhóm và định nghĩa chính xác: `docs/PLAN.md` Mục 4.
 
 ---
 
@@ -222,7 +247,7 @@ Yêu cầu:
 1. **Baseline ngây thơ:** "giá tăng > 100% ⇒ nguy hiểm" — dùng để chứng minh baseline này nhiều false positive.
 2. **Rule-based score (giải thích được):** tổng có trọng số các indicator/cờ → thang 0–100, kèm danh sách lý do (ví dụ: "top-10 nắm 85%", "3 ngày wash trading", "LP chưa khoá").
 3. **Model học máy:** logistic regression (dễ giải thích) + gradient boosting/random forest; tuỳ chọn isolation forest (không giám sát).
-4. **Target:** token xảy ra rug pull / sụp giá nghiêm trọng trong khoảng (cutoff, cutoff + H]; H mặc định 14 hoặc 30 ngày (ghi rõ lý do).
+4. **Target:** token xảy ra rug pull / sụp giá nghiêm trọng trong khoảng (cutoff, cutoff + H]; đã chốt **H = 30 ngày**, sụp giá nghiêm trọng = giá đóng cửa thấp nhất giảm ≥ 80% so với giá tại cutoff (lý do, độ nhạy và bước kiểm tra tỷ lệ ca dương: `docs/PLAN.md` Mục 5.1–5.2).
 5. Đầu ra mỗi token: `risk_score`, `risk_level` (thấp/trung bình/cao), `top_reasons`, `evidence_links` (link explorer tới giao dịch minh hoạ).
 
 Cảnh báo rò rỉ: cờ từ GoPlus/DexScreener hiện tại phản ánh trạng thái **sau** cutoff → không dùng làm feature cho mẫu quá khứ, trừ khi tái tạo được tại thời điểm cutoff; nếu dùng, tách riêng và ghi rõ.
@@ -231,7 +256,7 @@ Cảnh báo rò rỉ: cờ từ GoPlus/DexScreener hiện tại phản ánh tr�
 
 ## 10. Temporal split (bắt buộc)
 
-- Chọn các mốc T0 < T1 < T2 < T3. Cutoff của mẫu train ∈ [T0, T1), validation ∈ [T1, T2), test ∈ [T2, T3].
+- Chọn các mốc T0 < T1 < T2 < T3. Cutoff của mẫu train ∈ [T0, T1), validation ∈ [T1, T2), test ∈ [T2, T3]. Giá trị đã chốt và quy tắc gán cutoff cho từng token: `docs/PLAN.md` Mục 5.3 (sau này là `configs/split.yaml`).
 - Feature chỉ dùng dữ liệu ≤ cutoff; nhãn chỉ dùng dữ liệu trong (cutoff, cutoff + H].
 - Có **khoảng đệm (gap) ≥ H** giữa các tập để nhãn không chồng lấn.
 - Một token không xuất hiện ở cả train và test với cửa sổ chồng lấn.
@@ -306,13 +331,13 @@ Stack gợi ý: Python 3.11, pandas/polars, duckdb, requests + tenacity, web3.py
 | 8 | Manual validation | sample.csv, codebook, precision thực tế | ✋ |
 | 9–10 | Viết báo cáo | report, hình, slide, phần hạn chế & đạo đức | ✋ |
 
-(Nếu hạn nộp khác, hỏi sinh viên và co giãn kế hoạch.)
+**Bảng trên là khung 10 tuần của đề bài, không còn là lịch thực tế.** Hạn nộp 2026-12-27 nên lịch đã nén lại và các giai đoạn chạy song song: ngày cụ thể, phân công và điểm dừng nằm ở `docs/PLAN.md` Mục 8. Thứ tự giai đoạn và quy tắc ✋ vẫn giữ nguyên.
 
 Tại mỗi ✋: tóm tắt đã làm, kết quả chính, rủi ro, và **câu hỏi cần sinh viên quyết định**; chờ xác nhận rồi mới sang giai đoạn sau.
 
 ---
 
-## 15. Deliverable của lượt làm việc đầu tiên
+## 15. Deliverable của lượt làm việc đầu tiên (đã hoàn thành 2026-11-12, giữ để tham chiếu)
 
 1. Đọc paper (link Mục 2) và kiểm tra lại bảng ngưỡng ở Mục 2.2; sửa nếu sai.
 2. Tạo `docs/PLAN.md` (phạm vi, RQ, chuỗi được chọn, cỡ mẫu, mốc thời gian T0–T3, H, rủi ro & phương án dự phòng khi API giới hạn).

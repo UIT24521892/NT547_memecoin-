@@ -1,0 +1,85 @@
+# Cấu hình chuỗi và nguồn dữ liệu (PLAN Mục 6). Không chứa key: key đọc từ .env.
+# `verified`: ngày đã gọi thử thành công; null = chưa thử, không được giả định là đúng.
+# Giới hạn đo thực tế: MEMORY.md Mục 4.
+
+version: 1
+
+common:
+  ohlcv:
+    provider: geckoterminal
+    base_url: https://api.geckoterminal.com/api/v2
+    max_requests_per_minute: 10       # Swagger ~10/phút, FAQ 30/phút: chọn mức thấp (2026-10-01)
+    max_candles_per_request: 1000
+    lookback_days_free: 180           # đo 2026-11-06: quá 180 ngày trả 401
+  user_agent: nt547-student-research
+
+ethereum:
+  chain_id: 1
+  sample_size: 100
+  logs:
+    provider: blockscout
+    base_url: https://api.blockscout.com/1/api   # cần BLOCKSCOUT_API_KEY
+    key_env: BLOCKSCOUT_API_KEY
+    max_rows_per_request: 1000
+    max_requests_per_second: 5        # gói free 100.000 credit/ngày
+    verified: 2026-11-12
+  quote_tokens:
+    WETH: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  factories:
+    - name: uniswap_v2
+      address: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+      event_topic0: "0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9"  # PairCreated
+      verified: 2026-11-12            # 167 pool ngày 2026-06-10
+    - name: uniswap_v3
+      address: "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      event_topic0: "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"  # PoolCreated
+      verified: null                  # chưa thử
+
+base:
+  chain_id: 8453
+  sample_size: 100
+  logs:
+    provider: drpc
+    base_url: https://lb.drpc.live/base   # + "/<key>"; cần DRPC_API_KEY
+    key_env: DRPC_API_KEY
+    max_block_range: 100              # đo 2026-11-12: 114 đã lỗi, dù thông báo ghi 10.000
+    max_requests_per_second: 1.9      # đo tuần tự 20 lần
+    multi_address: true               # 1 lần gọi lọc được nhiều address + nhiều topic
+    verified: 2026-11-12
+    note: "Blockscout bỏ Base khỏi gói free từ 2026-10-01 (HTTP 402)"
+  block_time_seconds: 2               # khớp timestamp block 47130126 = 2026-06-09T23:59:59Z
+  quote_tokens:
+    WETH: "0x4200000000000000000000000000000000000006"
+  factories:
+    - name: uniswap_v2
+      address: "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6"
+      event_topic0: "0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9"
+      verified: 2026-11-12            # 3 pool trong 100 block đầu ngày 2026-06-10
+    - name: uniswap_v3
+      address: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
+      event_topic0: "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
+      verified: null                  # đã gọi 1 lần, 0 log trong 100 block: chưa đủ để kết luận
+    - name: aerodrome
+      address: null                   # chưa tra; PLAN bắt buộc hỗ trợ trước khi thu Base
+      verified: null
+
+solana:
+  sample_size: 100
+  rpc:
+    provider: helius
+    base_url: https://mainnet.helius-rpc.com/   # + "?api-key=<key>"
+    key_env: HELIUS_API_KEY
+    max_requests_per_second: 10       # gói free; đo tuần tự ~3/giây (giới hạn bởi độ trễ)
+    monthly_credits: 1000000
+    verified: 2026-11-12
+    fallback_url: https://api.mainnet-beta.solana.com   # ~0,35 lần/giây, chỉ dự phòng
+  max_supported_transaction_version: 1
+  quote_mints:
+    WSOL: So11111111111111111111111111111111111111112
+  token_list:
+    method: pumpfun_migrations
+    migration_account: 39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg
+    filter_status: succeeded
+    verified: 2026-11-12              # 375 Migrate ngày 2026-06-10, mẫu 8/8 đúng
+    limitation: "chỉ token tốt nghiệp pump.fun"
+  max_transactions_per_token: 10000   # PLAN Mục 4.3; vượt thì swaps_partial=true

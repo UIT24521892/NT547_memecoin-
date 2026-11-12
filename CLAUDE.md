@@ -2,25 +2,28 @@
 
 @AGENTS.md
 
-> `AGENTS.md` ở trên là **nguồn sự thật duy nhất** (vai trò, RQ, ngưỡng, schema, kế hoạch). File này chỉ bổ sung những gì riêng cho Claude Code. **Không sao chép nội dung AGENTS.md vào đây** để tránh lệch giữa Codex và Claude Code. Nếu hai file mâu thuẫn, AGENTS.md thắng.
+@docs/PLAN.md
+
+> `AGENTS.md` là **nguồn sự thật** về vai trò, nguyên tắc, RQ, schema và quy trình bám kế hoạch. `docs/PLAN.md` (sinh viên duyệt 2026-11-12) là nguồn về tham số cụ thể, cổng quyết định và lịch; cả hai được nạp sẵn ở trên. File này chỉ bổ sung những gì riêng cho Claude Code. **Không sao chép nội dung hai file kia vào đây** để tránh lệch giữa Codex và Claude Code. Thứ tự ưu tiên khi mâu thuẫn: xem mục "Bám sát kế hoạch đã duyệt" của AGENTS.md.
 
 ## 1. Đọc gì khi bắt đầu phiên
 
 1. `MEMORY.md` — trạng thái dự án, quyết định đã chốt, câu hỏi còn mở (dùng chung với Codex).
-2. `docs/LOG.md` — nhật ký phiên gần nhất (khi file đã tồn tại).
-3. `docs/PLAN.md` — mốc T0–T3, H, chuỗi đã chọn (khi file đã tồn tại).
+2. Mục cuối của `docs/LOG.md` — phiên gần nhất làm gì, còn mở gì.
+3. `docs/PLAN.md` đã có sẵn trong ngữ cảnh: đối chiếu ngày hôm nay với Mục 7 (cổng) và Mục 8 (lịch).
 
-Chỉ đọc thêm file khác khi việc đang làm cần đến. Không quét cả repo.
+Câu trả lời đầu tiên của mỗi phiên phải nêu: đang ở dòng lịch nào, cổng nào sắp tới hoặc đã quá hạn, trễ mấy ngày. Chỉ đọc thêm file khác khi việc đang làm cần đến. Không quét cả repo.
 
 **Đọc paper:** dùng bản Markdown trong `docs/references/markdown/` (grep được, ít token), không đọc PDF trừ khi cần đối chiếu công thức/bảng. Danh sách tài liệu và link gốc: `docs/references/README.md`. Môi trường Python: `.venv/` (chạy `.venv/bin/python`).
 
 ## 2. Giai đoạn hiện tại
 
-Xem mục "Giai đoạn hiện tại" trong `MEMORY.md`. Quy tắc cứng:
+Xem mục "Giai đoạn hiện tại" trong `MEMORY.md` và lịch ở `docs/PLAN.md` Mục 8. Quy tắc cứng:
 
-- Chưa được sinh viên duyệt ✋ của giai đoạn trước thì **không** sang giai đoạn sau (AGENTS.md Mục 14).
-- Ở giai đoạn Tuần 1–2: **chỉ viết tài liệu, không viết code thu dữ liệu**.
-- Lưu ý: AGENTS.md Mục 0 ghi "làm theo Mục 14" cho lượt đầu, nhưng deliverable lượt đầu thật sự nằm ở **Mục 15**. Dùng Mục 15.
+- Chưa được sinh viên duyệt ✋ của giai đoạn trước thì **không** sang giai đoạn sau.
+- Trước ✋ thiết kế (DATA_CARD, schema, configs): chỉ viết tài liệu và script thử nhỏ trong `scripts/` trên vài token. Collector và mọi code trong `src/` chỉ viết sau ✋ đó.
+- Việc ngoài dòng lịch hiện tại: nói rõ nó lấy thời gian của việc nào trước khi làm.
+- Không đổi tham số của PLAN (chuỗi, cỡ mẫu, T0–T3, H, target, tiêu chí cổng) khi sinh viên chưa đồng ý. Thấy PLAN sai hoặc không khả thi thì báo kèm số liệu đo được, đề xuất cách sửa, rồi chờ.
 
 ## 3. Cách làm việc với sinh viên
 
@@ -53,7 +56,7 @@ Xem mục "Giai đoạn hiện tại" trong `MEMORY.md`. Quy tắc cứng:
 - Type hints, docstring ngắn tiếng Việt, hàm nhỏ, tên biến dễ hiểu. Khớp phong cách file xung quanh.
 - Cấu trúc theo AGENTS.md Mục 13: `src/memecoin/{collect,amm,features,indicators,model,viz}`.
 - Mỗi indicator và công thức AMM có unit test với cả ca dương tính lẫn âm tính (pytest). Ví dụ bắt buộc: pool 0,01 ETH / 100 MEME, mua 50 MEME → giá +300%.
-- Chạy `pytest` trước khi báo "xong". Nếu test fail hoặc bị bỏ qua, nói thẳng kèm output.
+- Chạy `pytest` trước khi báo "xong". Nếu test fail hoặc bị bỏ qua, nói thẳng kèm output. Lệnh: `.venv/bin/python -m pytest`. `.venv` không có pip; cài thư viện bằng `uv pip install --python .venv/bin/python <gói>` rồi cập nhật `requirements.txt` bằng `uv pip freeze --python .venv/bin/python > requirements.txt`.
 - Không thêm thư viện nặng khi pandas/duckdb/networkx đủ dùng.
 
 ## 7. Cập nhật bộ nhớ chung
@@ -62,7 +65,8 @@ Cuối mỗi phiên có thay đổi thực chất:
 
 1. Thêm một mục ngắn vào `docs/LOG.md` (làm gì, quyết định gì, vì sao, còn mở gì).
 2. Cập nhật `MEMORY.md`: giai đoạn hiện tại, quyết định đã chốt, câu hỏi còn mở, ghi chú API đã kiểm chứng.
-3. Không nhét chi tiết dài vào `MEMORY.md`. Nội dung dài đặt ở `docs/` rồi trỏ link.
+3. Nếu một dòng lịch hoặc một cổng đổi trạng thái (xong, đạt, không đạt, trễ): đánh dấu ngay trong `docs/PLAN.md` Mục 7–8.
+4. Không nhét chi tiết dài vào `MEMORY.md`. Nội dung dài đặt ở `docs/` rồi trỏ link.
 
 Memory tự động của Claude Code (ngoài repo) chỉ dùng cho sở thích cá nhân của sinh viên. Mọi thứ liên quan dự án phải nằm trong `MEMORY.md` để Codex cũng thấy.
 

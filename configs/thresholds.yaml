@@ -1,0 +1,88 @@
+# Ngưỡng indicator. Mặc định = paper Mongardini & Mei (USENIX Security 2026).
+# Quy ước trường `source`:
+#   paper_pdf      : con số đọc trong PDF (trang in / trang PDF), đối chiếu 2026-10-01 [codex]
+#   artifact_code  : chi tiết PDF không ghi, lấy từ notebook trong artifact Zenodo, đọc 2026-11-12 [claude]
+#   project_choice : đồ án tự chọn, phải nêu trong báo cáo và chạy độ nhạy
+# Chỗ PDF và mã khác nhau: giữ cả hai, `mode` chọn bản dùng mặc định.
+# Phần trăm ghi dạng số phần trăm (500 = 500%), tỷ lệ ghi dạng 0..1.
+# Chỉ chỉnh trên train/validation. Không chỉnh theo tập test (AGENTS.md Mục 10).
+
+version: 1
+
+wash_trading:
+  screening:                          # pha 1, nến ngày
+    volume_change_pct_gt: 500         # paper_pdf §5.2.1, 3939/PDF 10; notebook dùng abs(), tương đương vì pct_change >= -100
+    abs_return_pct_lt: 5.0            # paper_pdf §5.2.1, 3939/PDF 10; notebook `return_impact: 5.0`
+    return_definition: close_to_close # artifact_code: df['closed'].pct_change()
+    source: paper_pdf
+  zero_risk:                          # pha 2, theo maker/ngày
+    max_imbalance_pct: 2              # paper_pdf "chênh 2%"; công thức từ artifact_code
+    formula: "abs(B - S) / (B + S) * 100 <= 2"  # artifact_code wash_trading_detection.ipynb cell 18
+    unit: usd                         # artifact_code: B, S là volume USD; lượng token cân bằng != USD cân bằng
+    source: artifact_code
+  circular_volume:
+    min_share_pct: 99
+    comparison: ">="                  # paper_pdf ghi "at least 99%"
+    comparison_artifact: ">"          # artifact_code dùng > 99; chạy cả hai trong độ nhạy
+    source: paper_pdf
+  coordinated_network:
+    min_days: 2                       # artifact_code `total_days > 1`; PDF không ghi số ngày
+    source: artifact_code
+  artifact_only_filters:
+    max_unique_makers_per_day: 50     # artifact_code (SQL Dune); không có trong PDF
+    enabled: false                    # mặc định tắt; chỉ bật khi so khớp mã tác giả
+
+lpi:
+  screening:                          # pha 1, nến ngày
+    return_pct_gt: 100                # paper_pdf §5.3.1, 3941/PDF 12
+    volume_change_pct_le: 20          # paper_pdf; artifact_code MIN_VOLUME_CHANGE_PCT = 20
+    low_volume_usd_lt: 1000           # paper_pdf; artifact_code LOW_VOLUME_THRESHOLD = 1000
+    logic: "return AND (volume_change OR low_volume)"  # artifact_code có ngoặc đúng
+    source: paper_pdf
+  verification:                       # pha 2, theo token/ngày
+    min_buy_ratio: 0.90
+    comparison: ">="                  # paper_pdf ">= 90%"
+    comparison_artifact: ">"          # artifact_code buy_ratio > 0.90
+    max_unique_traders: 10            # paper_pdf; địa chỉ, không phải người
+    source: paper_pdf
+
+rug_pull:                             # nhãn kết cục, nến ngày
+  return_pct_lt: -99                  # paper_pdf §6.1, 3942/PDF 13
+  window_days: 3                      # artifact_code window_size=3 = ngày sập + 2 ngày sau (docstring ghi "+3 ngày", mã chỉ lấy 2)
+  later_volume_max_ratio: 0.01        # artifact_code: mọi ngày sau < 1% volume của NGÀY SẬP
+  volume_reference: drop_day          # artifact_code; PDF không ghi volume tham chiếu
+  missing_candle_is_zero_volume: false  # project_choice: thiếu nến != volume 0
+  source: artifact_code
+
+pump_and_dump:                        # nhãn kết cục, nến giờ
+  rsi_min: 80                         # paper_pdf §6.2; artifact_code dùng >=
+  rsi_period_hours: 6                 # artifact_code talib.RSI(timeperiod=6)
+  pump_min_return_pct: 50             # paper_pdf
+  pump_max_duration_hours: 24         # paper_pdf
+  pump_min_volume_increase_pct: 500   # paper_pdf; artifact_code: volume TB trong pump so với volume TB trước pump cùng độ dài
+  dump_min_drop_pct: 30               # paper_pdf
+  dump_search_hours: 48               # artifact_code dump_thresholds.max_duration
+  post_dump_volume_max_ratio: 0.5     # paper_pdf "volume TB sau dump < 50% volume pha pump"
+  source: paper_pdf
+
+holder_concentration:
+  top10_share_pct_gt: 30              # paper_pdf §5.1.1, 3938–3939/PDF 9–10 (dẫn GoPlus/CertiK)
+  bundle_fresh_airdrop_share_pct_gt: 30  # paper_pdf §5.1.1, 3938/PDF 9
+  exclude: [pool, burn, known_cex]    # project_choice; danh sách loại trừ chưa chốt
+  source: paper_pdf
+
+# Target của detector (PLAN Mục 5.2, sinh viên duyệt 2026-11-12)
+target:
+  severe_crash_min_drop: 0.80         # project_choice: giá đóng cửa thấp nhất <= 20% giá tại cutoff
+  sensitivity: [0.70, 0.90]
+  include_rug_pull: true
+
+# Ngưỡng lân cận cho phân tích độ nhạy (AGENTS.md Mục 8)
+sensitivity:
+  wash_trading.screening.volume_change_pct_gt: [300, 500, 1000]
+  wash_trading.screening.abs_return_pct_lt: [2, 5, 10]
+  wash_trading.zero_risk.max_imbalance_pct: [1, 2, 5]
+  wash_trading.circular_volume.min_share_pct: [95, 99]
+  lpi.screening.return_pct_gt: [50, 100, 200]
+  lpi.verification.min_buy_ratio: [0.80, 0.90, 0.95]
+  lpi.verification.max_unique_traders: [5, 10, 20]

@@ -1,0 +1,23 @@
+[project]
+name = "memecoin"
+version = "0.1.0"
+description = "Đồ án NT547: phát hiện dấu hiệu wash trading, LPI và tiền dấu hiệu rug pull ở meme coin"
+requires-python = ">=3.11,<3.12"
+# Phiên bản chính xác đã cài nằm trong requirements.txt (tạo bằng `uv pip freeze`).
+# Thư viện mô hình (scikit-learn, lightgbm, shap) chỉ thêm ở giai đoạn Detector.
+dependencies = [
+    "pandas>=2.2",
+    "duckdb>=1.1",
+    "pyyaml>=6.0",
+    "requests>=2.32",
+    "tenacity>=9.0",
+    "python-dotenv>=1.0",
+    "networkx>=3.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

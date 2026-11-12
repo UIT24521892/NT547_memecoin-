@@ -1,0 +1,34 @@
+# Temporal split (PLAN Mục 5.3, sinh viên duyệt 2026-11-12).
+# Mọi ngày là UTC; khoảng [start, end] tính cả hai đầu, theo ngày cutoff.
+# Feature chỉ dùng dữ liệu <= cutoff. Nhãn chỉ dùng dữ liệu trong (cutoff, cutoff + horizon].
+
+version: 1
+seed: 20261112
+
+horizon_days: 30              # H
+min_history_days: 7           # token mới: cutoff = ngày đầu có >= 7 ngày giao dịch đầy đủ
+feature_lookback_days: 14     # dữ liệu tối thiểu trước cutoff đầu tiên
+
+# Dữ liệu OHLCV sớm nhất cần có (T0 - 14 ngày). GeckoTerminal free chỉ trả 180 ngày,
+# nên phải thu trước khoảng 2026-11-22 (PLAN Mục 5.3).
+data_start: 2026-05-26
+
+sets:
+  train:
+    cutoff_start: 2026-06-09  # T0
+    cutoff_end: 2026-07-13    # nhãn muộn nhất 2026-08-12
+  validation:
+    cutoff_start: 2026-08-13  # T1
+    cutoff_end: 2026-08-30    # nhãn muộn nhất 2026-09-29
+  test:
+    cutoff_start: 2026-09-30  # T2
+    cutoff_end: 2026-10-23    # T3; nhãn muộn nhất 2026-11-22. Chạy MỘT lần cuối.
+
+# Khoảng đệm >= H giữa các tập; token có cutoff rơi vào đây bị loại và phải báo số lượng.
+gaps:
+  - [2026-07-14, 2026-08-12]
+  - [2026-08-31, 2026-09-29]
+
+# Token có từ trước T0 (chủ yếu nhóm C): gán ngẫu nhiên 1 cutoff trong 3 tập bằng `seed`.
+# Nhóm C không dùng để train, không tính vào chỉ số chính (PLAN Mục 4.1).
+group_c_in_training: false
