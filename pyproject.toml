@@ -13,6 +13,7 @@ dependencies = [
     "tenacity>=9.0",
     "python-dotenv>=1.0",
     "networkx>=3.3",
+    "eth-hash[pycryptodome]>=0.7,<1",
 ]
 
 [project.optional-dependencies]
@@ -21,3 +22,4 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+pythonpath = ["src"]

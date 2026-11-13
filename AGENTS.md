@@ -308,13 +308,15 @@ meme-manipulation/
 ├── validation/
 ├── tests/
 ├── docs/ (PLAN.md, READING_GUIDE.md, LEARNING_ROADMAP.md, FEATURES.md,
-│          ANNOTATION_CODEBOOK.md, DATA_CARD.md, LOG.md)
+│          ANNOTATION_CODEBOOK.md, DATA_CARD.md, LOG.md, WRITING_GUIDE.md)
 └── report/        # báo cáo & slide cuối kỳ
 ```
 
 Stack gợi ý: Python 3.11, pandas/polars, duckdb, requests + tenacity, web3.py, networkx, scikit-learn, lightgbm, shap, matplotlib, pytest. Cố định seed, ghi phiên bản thư viện, `make`/script chạy lại từ đầu tới cuối.
 
 `docs/LOG.md`: nhật ký mỗi phiên làm việc (làm gì, quyết định gì, vì sao, vấn đề còn mở).
+
+Viết báo cáo: theo `docs/WRITING_GUIDE.md` (điều chỉnh skill `research-paper-writing` ở `.claude/skills/research-paper-writing/`; Codex đọc trực tiếp `SKILL.md` và `references/` trong thư mục đó). Dàn ý: `report/OUTLINE.md`.
 
 ---
 

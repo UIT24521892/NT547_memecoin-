@@ -46,6 +46,28 @@ Không dùng làm feature quá khứ: GoPlus, DexScreener, `holders`/authority h
 - OHLCV thu **hai đợt** (quanh 16–18/11 và từ 23/11) vì GeckoTerminal free chỉ trả 180 ngày gần nhất; đợt sau ghi thêm, không ghi đè.
 - `data/` không lên git (dữ liệu lớn, tái tạo được).
 
+### 4.1 Liệt kê ứng viên và chọn mẫu A/B (task 2, 2026-11-12)
+
+**Tầng ngày tạo pool.** Cutoff = ngày giao dịch đầy đủ thứ 7, nên pool chỉ có thể vào một tập nếu được tạo trong [cutoff_start − 7 − 7 ngày đệm, cutoff_end − 7]: train 2026-05-26 → 07-06, validation 07-30 → 08-23, test 09-16 → 10-16 (`configs/split.yaml` mục `discovery`). Pool tạo ngoài các khoảng này có cutoff rơi vào khoảng đệm nên vốn bị loại.
+
+**Nguồn và độ phủ ngày.**
+
+| Chuỗi | Nguồn | Ngày quét | Ghi chú |
+|---|---|---|---|
+| Ethereum | Blockscout: `PairCreated` V2, `PoolCreated` V3, `Initialize` V4 (PoolManager) | Mọi ngày trong 3 tầng (98) | |
+| Base | dRPC: V2, V3, Aerodrome classic, V4 (gộp một bộ lọc) | **20 ngày chọn ngẫu nhiên** (train 9 / val 5 / test 6, seed trong `split.yaml`) | Xác suất chọn ngày khác nhau giữa tầng: cột `day_sampled_fraction` |
+| Solana | Helius: `Migrate`/`MigrateV2` của pump.fun, xác nhận CPI `CreatePool` | Mọi ngày (98) | Chỉ token tốt nghiệp pump.fun |
+
+Pool V4 dùng PoolId (32 byte) làm `pool_address`; GeckoTerminal tra được bằng id này. ETH gốc (Currency 0x0) tính là đồng quote. Chỉ giữ pool có đúng một phía là WETH/ETH (EVM) hoặc WSOL (Solana); pool ghép USDC/USDT bị bỏ.
+
+**Lọc token mới (EVM).** Contract token phải được tạo không sớm hơn 7 ngày trước ngày tạo pool. Ethereum: `getcontractcreation` của Blockscout; Base: `eth_getCode` tại block của mốc 7 ngày trước. Mục đích: loại token cũ có pool mới (USDC, USDT, WBTC, LST, UNI, PEPE…), quan sát được trong danh sách ứng viên. Tiêu chí chỉ dùng thông tin có lúc tạo pool. Không loại theo "xuất hiện nhiều ngày" vì meme thành công cũng được tạo thêm pool về sau (chọn theo tương lai).
+
+**Sàng lọc tuần tự (`scripts/screen_sample.py`).** Xáo ngẫu nhiên ứng viên, mỗi token xét một pool (pool gặp trước), thu nến ngày GeckoTerminal từ ngày tạo pool. Gán cutoff và nhóm A bằng `src/memecoin/model/sampling.py` (chỉ nến ≤ cutoff; có test chống rò rỉ). B = token đủ điều kiện gặp trước, A = token đạt tiêu chí A gặp sau, quota mỗi nhóm train 18 / val 9 / test 13. Trần 5.000 pool/chuỗi. B có thể chứa token đạt tiêu chí A.
+
+**Lọc "còn hoạt động tại cutoff" (sinh viên chọn phương án (a) ngày 2026-11-13).** Token chỉ đủ điều kiện khi volume USD trung bình trong 7 ngày lịch kết thúc ở cutoff (gồm cutoff) ≥ $1.000; ngày không có nến tính volume 0. Chỉ dùng nến ≤ cutoff (có test chống rò rỉ). Lý do: đo sơ bộ Solana 12/11 cho thấy 89% token đã giảm ≥ 80% so với đỉnh trước cutoff, nên nhãn sụp giá đo token đã chết. Ngưỡng $1.000 là đề xuất, neo theo mốc volume < $1.000 của LPI trong paper (§5.3.1, tr. 3941); độ nhạy $100 / $10.000 phải báo cáo. Token bị loại vì đã ngừng hoạt động vẫn giữ trong `screened.csv` (cột `active`, `active_volume_usd`) để báo cáo tỷ lệ sụp sớm như một phát hiện mô tả. Kết quả sàng lọc trước khi có bộ lọc: `data/interim/task2/screening/solana_before_active_filter_2026-11-13/`.
+
+**Pilot phễu (30 pool/chuỗi, 1 ngày train, `data/interim/task2/pilot_funnel/`):** có cutoff Ethereum 3/30, Base 0/30, Solana 26/30; đạt A: Ethereum 0/3, Solana 1/23. Danh sách EVM phần lớn là pool không giao dịch; danh sách Solana đã qua ngưỡng tốt nghiệp nên đủ điều kiện nhiều hơn hẳn. Đây là khác biệt về cách định nghĩa tổng thể giữa các chuỗi, phải ghi khi so sánh chéo chuỗi.
+
 ## 5. Quy tắc thời điểm (as-of)
 
 - Feature của một token chỉ dùng bản ghi có thời gian ≤ cutoff; nhãn chỉ dùng (cutoff, cutoff + 30 ngày].
@@ -59,8 +81,12 @@ Không dùng làm feature quá khứ: GoPlus, DexScreener, `holders`/authority h
 | Vấn đề | Ảnh hưởng | Cách xử lý |
 |---|---|---|
 | Solana chỉ lấy token tốt nghiệp pump.fun | Thiếu token từ launchpad khác; token chết trước khi tốt nghiệp không có | Ghi rõ; so sánh với tỷ lệ nền của paper |
-| EVM mới phủ factory Uniswap V2 (V3/V4/Aerodrome chưa thử) | Thiếu pool kiểu khác, nhất là Base | Thử trước khi thu; loại nào không hỗ trợ thì ghi |
+| EVM đọc V2/V3/V4 (+ Aerodrome classic trên Base); Slipstream chưa hỗ trợ | Thiếu pool Slipstream | Ghi rõ |
+| Base chỉ quét 20/98 ngày (ngẫu nhiên) | Mẫu vẫn ngẫu nhiên theo tầng nhưng ít ngày | Báo `day_sampled_fraction`; không suy ra tổng số pool Base |
+| Chỉ pool ghép WETH/ETH/WSOL | Bỏ token chỉ ghép USDC/USDT | Ghi rõ |
+| Token kích hoạt muộn (cần > 14 ngày để đủ 7 ngày giao dịch) | Có thể bị bỏ vì pool tạo ngoài tầng | Ghi rõ |
 | 1 pool/token | Bỏ sót wash trading ở pool khác | Ghi trong báo cáo |
+| Chỉ nhận token còn hoạt động tại cutoff (volume TB 7 ngày ≥ $1.000) | Bỏ ngoài phạm vi các cú sụp ngay sau khi ra mắt; mẫu là "token đã sống qua tuần đầu" | Báo tỷ lệ token bị loại theo chuỗi; độ nhạy $100 / $10.000 |
 | Trader EVM = `tx.from` | Router, aggregator, bot làm sai người giao dịch | Như paper (`tx_from` trên Dune); ghi là địa chỉ, không phải người |
 | Trader Solana suy từ số dư | Chuyển khoản trung gian, ví uỷ quyền có thể bị quy sai | Đối chiếu ≥ 20 giao dịch / ≥ 2 sàn (cổng 22/11) |
 | Trần 10.000 giao dịch/token Solana | Token sôi động thiếu dữ liệu | `swaps_partial = true`, không tính tỷ lệ cần đủ dữ liệu |
@@ -76,6 +102,8 @@ Không dùng làm feature quá khứ: GoPlus, DexScreener, `holders`/authority h
 - Dữ liệu artifact Zenodo dùng theo CC-BY-4.0, trích dẫn đầy đủ.
 
 ## 8. Thống kê thực tế (điền sau khi thu)
+
+**Đợt kỹ thuật 12/11 [codex]:** đã thu 10.887 nến trên 3 pool PEPE/BRETT/HEGE và giải mã 10 swap EVM; các pool chọn từ snapshot hiện tại chỉ để kiểm tra collector, **không phải mẫu nghiên cứu**, không điền vào bảng dưới hoặc bảng `samples`. Kết quả độ phủ, replay và giới hạn: [COLLECTOR_RUNBOOK.md](COLLECTOR_RUNBOOK.md). Mẫu 300 token vẫn chờ xác minh meme/cutoff/pool theo thanh khoản tại cutoff.
 
 | Chuỗi | Token | Pool | Nến ngày | Nến giờ | Swap | Ngày thu | Ghi chú |
 |---|---:|---:|---:|---:|---:|---|---|

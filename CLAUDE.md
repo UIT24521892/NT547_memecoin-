@@ -16,6 +16,8 @@ Câu trả lời đầu tiên của mỗi phiên phải nêu: đang ở dòng l�
 
 **Đọc paper:** dùng bản Markdown trong `docs/references/markdown/` (grep được, ít token), không đọc PDF trừ khi cần đối chiếu công thức/bảng. Danh sách tài liệu và link gốc: `docs/references/README.md`. Môi trường Python: `.venv/` (chạy `.venv/bin/python`).
 
+**Viết báo cáo:** dùng skill `research-paper-writing` (`.claude/skills/`) kèm phần điều chỉnh cho đồ án ở `docs/WRITING_GUIDE.md`; quy tắc của đồ án thắng skill khi mâu thuẫn. Dàn ý và bản đồ claim–evidence: `report/OUTLINE.md`. Văn xuôi kết quả chỉ viết từ dòng lịch 14–25/12.
+
 ## 2. Giai đoạn hiện tại
 
 Xem mục "Giai đoạn hiện tại" trong `MEMORY.md` và lịch ở `docs/PLAN.md` Mục 8. Quy tắc cứng:

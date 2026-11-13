@@ -6,6 +6,7 @@ click==8.5.0
 cryptography==50.0.2
 defusedxml==0.7.1
 duckdb==2.0.0
+eth-hash==0.8.0
 flatbuffers==25.12.19
 idna==3.20
 iniconfig==2.3.1
@@ -24,6 +25,7 @@ pluggy==1.7.0
 protobuf==7.36.2
 psutil==7.2.2
 pycparser==3.0
+pycryptodome==3.24.1
 pygments==2.21.0
 pymupdf==1.28.2
 pymupdf-layout==1.28.2

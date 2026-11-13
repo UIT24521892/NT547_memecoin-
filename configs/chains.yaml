@@ -8,7 +8,7 @@ common:
   ohlcv:
     provider: geckoterminal
     base_url: https://api.geckoterminal.com/api/v2
-    max_requests_per_minute: 10       # Swagger ~10/phút, FAQ 30/phút: chọn mức thấp (2026-10-01)
+    max_requests_per_minute: 10       # Swagger ~10/phút, FAQ 30/phút (2026-10-01). Thử 20 ngày 2026-11-13: 89/180 lần là 429, 200 chỉ 10,1/phút → giữ 10
     max_candles_per_request: 1000
     lookback_days_free: 180           # đo 2026-11-06: quá 180 ngày trả 401
   user_agent: nt547-student-research
@@ -21,10 +21,12 @@ ethereum:
     base_url: https://api.blockscout.com/1/api   # cần BLOCKSCOUT_API_KEY
     key_env: BLOCKSCOUT_API_KEY
     max_rows_per_request: 1000
-    max_requests_per_second: 5        # gói free 100.000 credit/ngày
+    max_requests_per_second: 5        # gói free 100.000 credit/ngày; dashboard 2026-11-13: ~20 credit/lần gọi → ~5.000 lần/ngày
+    creation_batch_size: 10            # số địa chỉ/lần getcontractcreation; thử thật 2026-11-13: 5 và 10 đều trả đủ
     verified: 2026-11-12
   quote_tokens:
     WETH: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ETH_native: "0x0000000000000000000000000000000000000000"   # chỉ có ở V4 (Currency 0 = ETH gốc)
   factories:
     - name: uniswap_v2
       address: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
@@ -33,7 +35,15 @@ ethereum:
     - name: uniswap_v3
       address: "0x1F98431c8aD98523631AE4a59f267346ea31F984"
       event_topic0: "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"  # PoolCreated
-      verified: null                  # chưa thử
+      verified: 2026-11-12            # collector: 17 log ngày 2026-06-10
+    - name: uniswap_v4
+      address: "0x000000000004444c5dc75cB358380D2e3dE08A90"
+      event_signature: "Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)"
+      # V4: một PoolManager cho mọi pool; "pool_address" là PoolId (bytes32), không phải contract.
+      # Nguồn: developers.uniswap.org/docs/protocols/v4/deployments + v4-core IPoolManager.sol (đọc 2026-11-12).
+      # Initialize(PoolId indexed id, Currency indexed currency0, Currency indexed currency1,
+      #            uint24 fee, int24 tickSpacing, IHooks hooks, uint160 sqrtPriceX96, int24 tick)
+      verified: 2026-11-12            # 376 Initialize ngày 2026-06-10 (167 ghép ETH gốc); GeckoTerminal tra được PoolId
 
 base:
   chain_id: 8453
@@ -50,6 +60,7 @@ base:
   block_time_seconds: 2               # khớp timestamp block 47130126 = 2026-06-09T23:59:59Z
   quote_tokens:
     WETH: "0x4200000000000000000000000000000000000006"
+    ETH_native: "0x0000000000000000000000000000000000000000"   # chỉ có ở V4
   factories:
     - name: uniswap_v2
       address: "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6"
@@ -58,10 +69,20 @@ base:
     - name: uniswap_v3
       address: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
       event_topic0: "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
-      verified: null                  # đã gọi 1 lần, 0 log trong 100 block: chưa đủ để kết luận
+      verified: 2026-11-12            # collector: 2 log trong block 47130126–47131125
     - name: aerodrome
-      address: null                   # chưa tra; PLAN bắt buộc hỗ trợ trước khi thu Base
-      verified: null
+      address: "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"
+      event_signature: "PoolCreated(address,address,bool,address,uint256)"
+      source: https://github.com/aerodrome-finance/contracts
+      verified: 2026-11-12            # 1 log thật trong block 47130126–47135125
+    - name: uniswap_v4
+      address: "0x498581ff718922c3f8e6a244956af099b2652b2b"
+      event_signature: "Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)"
+      # V4: một PoolManager cho mọi pool; "pool_address" là PoolId (bytes32), không phải contract.
+      # Nguồn: developers.uniswap.org/docs/protocols/v4/deployments + v4-core IPoolManager.sol (đọc 2026-11-12).
+      # Initialize(PoolId indexed id, Currency indexed currency0, Currency indexed currency1,
+      #            uint24 fee, int24 tickSpacing, IHooks hooks, uint160 sqrtPriceX96, int24 tick)
+      verified: 2026-11-12            # 240 Initialize trong block 47130126–47131125 (111 ghép WETH)
 
 solana:
   sample_size: 100
@@ -80,6 +101,23 @@ solana:
     method: pumpfun_migrations
     migration_account: 39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg
     filter_status: succeeded
-    verified: 2026-11-12              # 375 Migrate ngày 2026-06-10, mẫu 8/8 đúng
+    verified: 2026-11-12              # 375 tx thành công → 358 Migrate → 222 CPI CreatePool (collector)
     limitation: "chỉ token tốt nghiệp pump.fun"
+    # Layout từ IDL chính thức; giữ cả hai phiên bản vì cửa sổ có Migrate và MigrateV2.
+    idl_source: https://github.com/pump-fun/pump-public-docs/blob/main/idl/pump.json
+    program_id: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+    amm_program_id: pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA
+    amm_idl_source: https://github.com/pump-fun/pump-public-docs/blob/main/idl/pump_amm.json
+    create_pool_discriminator: [233, 146, 209, 142, 207, 104, 64, 188]
+    migration_layouts:
+      - name: migrate
+        discriminator: [155, 234, 231, 146, 236, 158, 162, 30]
+        mint_index: 2
+        quote_index: 14
+        pool_index: 9
+      - name: migrate_v2
+        discriminator: [187, 203, 18, 31, 206, 237, 254, 41]
+        mint_index: 2
+        quote_index: 3
+        pool_index: 10
   max_transactions_per_token: 10000   # PLAN Mục 4.3; vượt thì swaps_partial=true
